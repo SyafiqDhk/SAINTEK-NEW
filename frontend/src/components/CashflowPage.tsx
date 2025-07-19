@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import api from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -7,55 +8,38 @@ interface CashflowItem {
   date: string;
   type: "income" | "expense";
   amount: number;
-  description: string;
+  title: string;
 }
 
 const CashflowPage = () => {
-  const [cashflows] = useState<CashflowItem[]>([
-    {
-      id: 1,
-      date: "2024-07-15",
-      type: "income",
-      amount: 5000000,
-      description: "Donasi dari jamaah untuk pembangunan masjid",
-    },
-    {
-      id: 2,
-      date: "2024-07-14",
-      type: "expense",
-      amount: 800000,
-      description: "Biaya listrik dan air bulan Juli",
-    },
-    {
-      id: 3,
-      date: "2024-07-12",
-      type: "income",
-      amount: 2500000,
-      description: "Infaq Jumat",
-    },
-    {
-      id: 4,
-      date: "2024-07-10",
-      type: "expense",
-      amount: 1200000,
-      description: "Pembelian perlengkapan kajian",
-    },
-    {
-      id: 5,
-      date: "2024-07-08",
-      type: "income",
-      amount: 3000000,
-      description: "Donasi untuk program kajian sains Islam",
-    },
-  ]);
+  const [cashflows, setCashflows] = useState<CashflowItem[]>([]);
+  const [totalIncome, setTotalIncome] = useState(0);
+  const [totalExpense, setTotalExpense] = useState(0);
 
-  const totalIncome = cashflows
-    .filter((item) => item.type === "income")
-    .reduce((sum, item) => sum + item.amount, 0);
+  useEffect(() => {
+    const fetchCashflows = async () => {
+      try {
+        const res = await api.get("/cashflows");
+        const data = res.data;
+        setCashflows(data);
 
-  const totalExpense = cashflows
-    .filter((item) => item.type === "expense")
-    .reduce((sum, item) => sum + item.amount, 0);
+        const income = data
+          .filter((item: CashflowItem) => item.type === "income")
+          .reduce((sum: number, item: CashflowItem) => sum + item.amount, 0);
+
+        const expense = data
+          .filter((item: CashflowItem) => item.type === "expense")
+          .reduce((sum: number, item: CashflowItem) => sum + item.amount, 0);
+
+        setTotalIncome(income);
+        setTotalExpense(expense);
+      } catch (error) {
+        console.error("Gagal mengambil data cashflow:", error);
+      }
+    };
+
+    fetchCashflows();
+  }, []);
 
   const balance = totalIncome - totalExpense;
 
@@ -143,6 +127,9 @@ const CashflowPage = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              {cashflows.length === 0 && (
+                <p className="text-center text-gray-500">Belum ada transaksi.</p>
+              )}
               {cashflows.map((item) => (
                 <div
                   key={item.id}
@@ -161,7 +148,7 @@ const CashflowPage = () => {
                         {formatDate(item.date)}
                       </span>
                     </div>
-                    <p className="text-gray-800">{item.description}</p>
+                    <p className="text-gray-800">{item.title}</p>
                   </div>
                   <div
                     className={`text-lg font-semibold ${
