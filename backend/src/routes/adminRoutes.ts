@@ -1,14 +1,12 @@
-import { Router, Express } from "express";
-import AdminController from "../controllers/adminController";
+import { Router } from "express";
+import adminController from "../controllers/adminController";
 
 const router = Router();
-const adminController = new AdminController();
 
-export function setAdminRoutes(app: Express) {
-  app.use("/api/admin", router);
+router.post("/login", adminController.loginAdmin);
+router.post("/", adminController.createAdmin);
+router.get("/:id", adminController.getAdmin);
+router.put("/:id", adminController.updateAdmin);
+router.delete("/:id", adminController.deleteAdmin);
 
-  router.post("/", adminController.createAdmin.bind(adminController));
-  router.get("/:id", adminController.getAdmin.bind(adminController));
-  router.put("/:id", adminController.updateAdmin.bind(adminController));
-  router.delete("/:id", adminController.deleteAdmin.bind(adminController));
-}
+export default router;

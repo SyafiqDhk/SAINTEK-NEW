@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../App";
+import { useAuth } from "@/context/AuthContext";
+import api from "@/lib/api"; // import api baru
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,7 @@ const AdminLogin = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { setIsAdmin } = useAuth(); // ubah ini
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -20,25 +21,34 @@ const AdminLogin = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate loading
-    setTimeout(() => {
-      const success = login(username, password);
+    try {
+      const response = await api.post("/admin/login", {
+        username,
+        password,
+      });
 
-      if (success) {
-        toast({
-          title: "Login berhasil",
-          description: "Selamat datang di Admin Panel",
-        });
-        navigate("/admin");
-      } else {
-        toast({
-          title: "Login gagal",
-          description: "Username atau password salah",
-          variant: "destructive",
-        });
-      }
+      const { token } = response.data;
+
+      // Simpan token ke localStorage
+      localStorage.setItem("token", token);
+      setIsAdmin(true);
+
+      toast({
+        title: "Login berhasil",
+        description: "Selamat datang di Admin Panel",
+      });
+
+      navigate("/admin");
+    } catch (error: any) {
+      console.error(error);
+      toast({
+        title: "Login gagal",
+        description: error.response?.data?.message || "Terjadi kesalahan",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -95,12 +105,6 @@ const AdminLogin = () => {
                 {isLoading ? "Memverifikasi..." : "Login"}
               </Button>
             </form>
-
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600 mb-2">Kredensial Demo:</p>
-              <p className="text-sm font-mono">Username: admin</p>
-              <p className="text-sm font-mono">Password: admin123</p>
-            </div>
           </CardContent>
         </Card>
       </div>

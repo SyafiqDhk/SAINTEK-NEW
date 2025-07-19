@@ -1,6 +1,6 @@
 import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useState, createContext, useContext } from "react";
+import React, { useEffect, useState, createContext } from "react";
 import HomePage from "./components/HomePage";
 import AboutPage from "./components/AboutPage";
 import LecturePage from "./components/LecturePage";

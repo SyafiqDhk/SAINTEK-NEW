@@ -1,33 +1,68 @@
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcrypt";
+
+const prisma = new PrismaClient();
+
 class AdminService {
-  private adminModel: any; // Replace 'any' with the actual type of your AdminModel
+  async createAdmin(username: string, password: string) {
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-  constructor(adminModel: any) {
-    this.adminModel = adminModel;
-  }
+    const admin = await prisma.admin.create({
+      data: {
+        username,
+        password: hashedPassword,
+      },
+    });
 
-  async createAdmin(adminData: any): Promise<any> {
-    // Logic to create a new admin
-    const newAdmin = await this.adminModel.save(adminData);
-    return newAdmin;
-  }
-
-  async getAdmin(adminId: string): Promise<any> {
-    // Logic to retrieve an admin by ID
-    const admin = await this.adminModel.find(adminId);
     return admin;
   }
 
-  async updateAdmin(adminId: string, adminData: any): Promise<any> {
-    // Logic to update an existing admin
-    const updatedAdmin = await this.adminModel.update(adminId, adminData);
+  async loginAdmin(username: string, password: string) {
+    const admin = await prisma.admin.findUnique({
+      where: { username },
+    });
+
+    if (!admin) {
+      throw new Error("Admin not found");
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, admin.password);
+
+    if (!isPasswordValid) {
+      throw new Error("Invalid password");
+    }
+
+    return admin;
+  }
+
+  async getAdmin(adminId: number) {
+    const admin = await prisma.admin.findUnique({
+      where: { id: adminId },
+    });
+    return admin;
+  }
+
+  async updateAdmin(adminId: number, data: { username?: string; password?: string }) {
+    let updateData: any = { ...data };
+
+    if (data.password) {
+      updateData.password = await bcrypt.hash(data.password, 10);
+    }
+
+    const updatedAdmin = await prisma.admin.update({
+      where: { id: adminId },
+      data: updateData,
+    });
+
     return updatedAdmin;
   }
 
-  async deleteAdmin(adminId: string): Promise<any> {
-    // Logic to delete an admin by ID
-    await this.adminModel.delete(adminId);
+  async deleteAdmin(adminId: number) {
+    await prisma.admin.delete({
+      where: { id: adminId },
+    });
     return { message: "Admin deleted successfully" };
   }
 }
 
-export default AdminService;
+export default new AdminService();

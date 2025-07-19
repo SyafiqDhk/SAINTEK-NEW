@@ -1,18 +1,48 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../App";
+import { useAuth } from "@/context/AuthContext";
+import api from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Calendar, DollarSign, Users, Plus } from "lucide-react";
+
+interface Lecture {
+  id: number;
+  title: string;
+  speaker: string;
+  date: string;
+}
+
+interface Cashflow {
+  id: number;
+  title: string;
+  amount: number;
+  type: string;
+  date: string;
+}
 
 const AdminDashboard = () => {
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
 
+  const [lectures, setLectures] = useState<Lecture[]>([]);
+  const [cashflows, setCashflows] = useState<Cashflow[]>([]);
+
   useEffect(() => {
     if (!isAdmin) {
       navigate("/admin/login");
+      return;
     }
+
+    const fetchData = async () => {
+      const lecturesRes = await api.get("/lectures");
+      setLectures(lecturesRes.data);
+
+      const cashflowsRes = await api.get("/cashflows");
+      setCashflows(cashflowsRes.data);
+    };
+
+    fetchData();
   }, [isAdmin, navigate]);
 
   if (!isAdmin) {
@@ -43,8 +73,13 @@ const AdminDashboard = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-800">12</div>
-              <p className="text-emerald-500 text-sm">
+              <div className="text-2xl font-bold text-gray-800">
+                {lectures.length}
+              </div>
+              <p
+                className="text-emerald-500 text-sm cursor-pointer"
+                onClick={() => navigate("/admin/lectures")}
+              >
                 Kelola <span className="ml-1">→</span>
               </p>
             </CardContent>
@@ -60,10 +95,8 @@ const AdminDashboard = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-800">8</div>
-              <p className="text-emerald-500 text-sm">
-                Kelola <span className="ml-1">→</span>
-              </p>
+              <div className="text-2xl font-bold text-gray-800">0</div>
+              <p className="text-gray-400 text-sm">Belum tersedia</p>
             </CardContent>
           </Card>
 
@@ -77,8 +110,13 @@ const AdminDashboard = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-800">25</div>
-              <p className="text-emerald-500 text-sm">
+              <div className="text-2xl font-bold text-gray-800">
+                {cashflows.length}
+              </div>
+              <p
+                className="text-emerald-500 text-sm cursor-pointer"
+                onClick={() => navigate("/admin/cashflow")}
+              >
                 Kelola <span className="ml-1">→</span>
               </p>
             </CardContent>
@@ -94,8 +132,8 @@ const AdminDashboard = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-800">1,234</div>
-              <p className="text-emerald-500 text-sm">+12% bulan ini</p>
+              <div className="text-2xl font-bold text-gray-800">0</div>
+              <p className="text-gray-400 text-sm">Belum tersedia</p>
             </CardContent>
           </Card>
         </div>
@@ -141,30 +179,28 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center justify-between border-b pb-3">
-                  <div>
-                    <h3 className="font-semibold text-gray-800">
-                      Kontribusi Al-Khawarizmi
-                    </h3>
-                    <p className="text-sm text-gray-500">25 Juli 2024, 19:30</p>
+                {lectures.slice(0, 5).map((lecture) => (
+                  <div
+                    key={lecture.id}
+                    className="flex items-center justify-between border-b pb-3"
+                  >
+                    <div>
+                      <h3 className="font-semibold text-gray-800">
+                        {lecture.title}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        {new Date(lecture.date).toLocaleString()}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => navigate("/admin/lectures")}
+                    >
+                      Kelola
+                    </Button>
                   </div>
-                  <Button variant="ghost" size="sm">
-                    Edit
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between border-b pb-3">
-                  <div>
-                    <h3 className="font-semibold text-gray-800">
-                      Ibn Sina dan Kedokteran
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      1 Agustus 2024, 19:30
-                    </p>
-                  </div>
-                  <Button variant="ghost" size="sm">
-                    Edit
-                  </Button>
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -175,28 +211,31 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center justify-between border-b pb-3">
-                  <div>
-                    <h3 className="font-semibold text-gray-800">
-                      Donasi Pembangunan
-                    </h3>
-                    <p className="text-sm text-gray-500">15 Juli 2024</p>
+                {cashflows.slice(0, 5).map((cf) => (
+                  <div
+                    key={cf.id}
+                    className="flex items-center justify-between border-b pb-3"
+                  >
+                    <div>
+                      <h3 className="font-semibold text-gray-800">
+                        {cf.title}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        {new Date(cf.date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <span
+                      className={
+                        cf.type === "income"
+                          ? "text-green-600 font-semibold"
+                          : "text-red-600 font-semibold"
+                      }
+                    >
+                      {cf.type === "income" ? "+" : "-"}Rp{" "}
+                      {cf.amount.toLocaleString()}
+                    </span>
                   </div>
-                  <span className="text-green-600 font-semibold">
-                    +Rp 5.000.000
-                  </span>
-                </div>
-                <div className="flex items-center justify-between border-b pb-3">
-                  <div>
-                    <h3 className="font-semibold text-gray-800">
-                      Biaya Listrik
-                    </h3>
-                    <p className="text-sm text-gray-500">14 Juli 2024</p>
-                  </div>
-                  <span className="text-red-600 font-semibold">
-                    -Rp 800.000
-                  </span>
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>
